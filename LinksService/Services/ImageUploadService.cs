@@ -35,7 +35,7 @@ public class ImageUploadService : IImageUploadService
         var request = new PutObjectRequest
         {
             BucketName = _bucketName,
-            Key = key,
+            Key = fileName,
             InputStream = stream,
             ContentType = imageFile.ContentType,
             CannedACL = S3CannedACL.PublicRead
