@@ -109,7 +109,6 @@ AWS_ACCESS_KEY=your_do_spaces_access_key
 AWS_SECRET_KEY=your_do_spaces_secret_key
 AWS_SERVICE_URL=https://sgp1.digitaloceanspaces.com
 AWS_BUCKET_NAME=your_bucket_name
-AWS_CDN_URL=https://your_bucket.sgp1.cdn.digitaloceanspaces.com
 
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_secure_password
@@ -283,7 +282,6 @@ AWS_ACCESS_KEY=your_access_key
 AWS_SECRET_KEY=your_secret_key
 AWS_SERVICE_URL=https://sgp1.digitaloceanspaces.com
 AWS_BUCKET_NAME=your_bucket
-AWS_CDN_URL=https://your_bucket.sgp1.cdn.digitaloceanspaces.com
 
 # Admin User (created on first startup)
 ADMIN_USERNAME=admin
@@ -320,7 +318,6 @@ curl http://localhost:5005/api/links
 | `AWS_SECRET_KEY` | Yes | S3/Spaces secret key |
 | `AWS_SERVICE_URL` | Yes | S3 endpoint URL |
 | `AWS_BUCKET_NAME` | Yes | Storage bucket name |
-| `AWS_CDN_URL` | Yes | CDN URL for images |
 | `ADMIN_USERNAME` | Yes | Initial admin username |
 | `ADMIN_PASSWORD` | Yes | Initial admin password |
 

@@ -11,7 +11,6 @@ services:
       - AWS__SecretKey=${AWS_SECRET_KEY}
       - AWS__ServiceURL=${AWS_SERVICE_URL}
       - AWS__BucketName=${AWS_BUCKET_NAME}
-      - AWS__CdnUrl=${AWS_CDN_URL}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     depends_on:
