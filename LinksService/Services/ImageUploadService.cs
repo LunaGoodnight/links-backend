@@ -8,17 +8,12 @@ public class ImageUploadService : IImageUploadService
     private readonly IAmazonS3 _s3Client;
     private readonly IConfiguration _configuration;
     private readonly string _bucketName;
-    private readonly string _cdnUrl;
 
     public ImageUploadService(IAmazonS3 s3Client, IConfiguration configuration)
     {
         _s3Client = s3Client;
         _configuration = configuration;
         _bucketName = "catsheue33";
-        _cdnUrl = Environment.GetEnvironmentVariable("AWS_CDN_URL") ??
-                 Environment.GetEnvironmentVariable("AWS__CdnUrl") ??
-                 configuration["AWS:CdnUrl"] ??
-                 $"https://{_bucketName}.sgp1.cdn.digitaloceanspaces.com";
     }
 
     public async Task<string> UploadImageAsync(IFormFile imageFile)
@@ -28,14 +23,14 @@ public class ImageUploadService : IImageUploadService
 
         ValidateImageFile(imageFile);
 
-        var fileName = GenerateUniqueFileName(imageFile.FileName, imageFile.ContentType);
+        var key = GenerateUniqueFileName(imageFile.FileName, imageFile.ContentType);
         var folderName = "links";
         using var stream = imageFile.OpenReadStream();
 
         var request = new PutObjectRequest
         {
             BucketName = _bucketName,
-            Key = fileName,
+            Key = key,
             InputStream = stream,
             ContentType = imageFile.ContentType,
             CannedACL = S3CannedACL.PublicRead
@@ -43,7 +38,7 @@ public class ImageUploadService : IImageUploadService
 
         await _s3Client.PutObjectAsync(request);
 
-        return $"{_cdnUrl}/{folderName}/{fileName}";
+        return $"https://i.vividcats.org/{folderName}/{key}";
     }
 
     public async Task<bool> DeleteImageAsync(string imageUrl)
