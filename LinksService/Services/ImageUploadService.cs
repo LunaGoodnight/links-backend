@@ -1,0 +1,132 @@
+using Amazon.S3;
+using Amazon.S3.Model;
+
+namespace LinksService.Services;
+
+public class ImageUploadService : IImageUploadService
+{
+    private readonly IAmazonS3 _s3Client;
+    private readonly IConfiguration _configuration;
+    private readonly string _bucketName;
+    private readonly string _cdnUrl;
+
+    public ImageUploadService(IAmazonS3 s3Client, IConfiguration configuration)
+    {
+        _s3Client = s3Client;
+        _configuration = configuration;
+        _bucketName = Environment.GetEnvironmentVariable("AWS_BUCKET_NAME") ??
+                     Environment.GetEnvironmentVariable("AWS__BucketName") ??
+                     configuration["AWS:BucketName"] ??
+                     "links";
+        _cdnUrl = Environment.GetEnvironmentVariable("AWS_CDN_URL") ??
+                 Environment.GetEnvironmentVariable("AWS__CdnUrl") ??
+                 configuration["AWS:CdnUrl"] ??
+                 $"https://{_bucketName}.sgp1.cdn.digitaloceanspaces.com";
+    }
+
+    public async Task<string> UploadImageAsync(IFormFile imageFile)
+    {
+        if (imageFile == null || imageFile.Length == 0)
+            throw new ArgumentException("Image file is required");
+
+        ValidateImageFile(imageFile);
+
+        var key = GenerateUniqueFileName(imageFile.FileName, imageFile.ContentType);
+
+        using var stream = imageFile.OpenReadStream();
+
+        var request = new PutObjectRequest
+        {
+            BucketName = _bucketName,
+            Key = key,
+            InputStream = stream,
+            ContentType = imageFile.ContentType,
+            CannedACL = S3CannedACL.PublicRead
+        };
+
+        await _s3Client.PutObjectAsync(request);
+
+        return $"{_cdnUrl}/{key}";
+    }
+
+    public async Task<bool> DeleteImageAsync(string imageUrl)
+    {
+        try
+        {
+            var key = ExtractKeyFromUrl(imageUrl);
+            if (string.IsNullOrEmpty(key)) return false;
+
+            var request = new DeleteObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = key
+            };
+
+            await _s3Client.DeleteObjectAsync(request);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void ValidateImageFile(IFormFile imageFile)
+    {
+        var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+        if (!allowedTypes.Contains(imageFile.ContentType.ToLower()))
+            throw new ArgumentException("Only JPEG, PNG, GIF, and WebP images are allowed");
+
+        const int maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+        if (imageFile.Length > maxSizeInBytes)
+            throw new ArgumentException("Image size cannot exceed 10MB");
+    }
+
+    private string GenerateUniqueFileName(string originalFileName, string contentType)
+    {
+        var extension = Path.GetExtension(originalFileName);
+
+        if (string.IsNullOrEmpty(extension))
+        {
+            extension = GetExtensionFromContentType(contentType);
+        }
+
+        var fileName = $"links/{GenerateShortId()}{extension}";
+        return fileName;
+    }
+
+    private string GetExtensionFromContentType(string contentType)
+    {
+        return contentType.ToLower() switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/jpg" => ".jpg",
+            "image/png" => ".png",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => ".jpg"
+        };
+    }
+
+    private string GenerateShortId()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 8)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    private string ExtractKeyFromUrl(string imageUrl)
+    {
+        try
+        {
+            var uri = new Uri(imageUrl);
+            // Remove leading slash and return the path
+            return uri.AbsolutePath.TrimStart('/');
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+}
