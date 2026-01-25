@@ -14,10 +14,7 @@ public class ImageUploadService : IImageUploadService
     {
         _s3Client = s3Client;
         _configuration = configuration;
-        _bucketName = Environment.GetEnvironmentVariable("AWS_BUCKET_NAME") ??
-                     Environment.GetEnvironmentVariable("AWS__BucketName") ??
-                     configuration["AWS:BucketName"] ??
-                     "links";
+        _bucketName = "catsheue33";
         _cdnUrl = Environment.GetEnvironmentVariable("AWS_CDN_URL") ??
                  Environment.GetEnvironmentVariable("AWS__CdnUrl") ??
                  configuration["AWS:CdnUrl"] ??
@@ -31,8 +28,8 @@ public class ImageUploadService : IImageUploadService
 
         ValidateImageFile(imageFile);
 
-        var key = GenerateUniqueFileName(imageFile.FileName, imageFile.ContentType);
-
+        var fileName = GenerateUniqueFileName(imageFile.FileName, imageFile.ContentType);
+        var folderName = "links";
         using var stream = imageFile.OpenReadStream();
 
         var request = new PutObjectRequest
@@ -46,7 +43,7 @@ public class ImageUploadService : IImageUploadService
 
         await _s3Client.PutObjectAsync(request);
 
-        return $"{_cdnUrl}/{key}";
+        return $"{_cdnUrl}/{folderName}/{fileName}";
     }
 
     public async Task<bool> DeleteImageAsync(string imageUrl)
