@@ -13,7 +13,7 @@ public class ImageUploadService : IImageUploadService
     {
         _s3Client = s3Client;
         _configuration = configuration;
-        _bucketName = "catsheue33";
+        _bucketName = "cute33";
     }
 
     public async Task<string> UploadImageAsync(IFormFile imageFile)
@@ -24,7 +24,6 @@ public class ImageUploadService : IImageUploadService
         ValidateImageFile(imageFile);
 
         var key = GenerateUniqueFileName(imageFile.FileName, imageFile.ContentType);
-        var folderName = "links";
         using var stream = imageFile.OpenReadStream();
 
         var request = new PutObjectRequest
@@ -38,7 +37,7 @@ public class ImageUploadService : IImageUploadService
 
         await _s3Client.PutObjectAsync(request);
 
-        return $"https://i.vividcats.org/{folderName}/{key}";
+        return $"https://i.vividcats.org/{key}";
     }
 
     public async Task<bool> DeleteImageAsync(string imageUrl)
