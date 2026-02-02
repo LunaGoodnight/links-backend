@@ -8,10 +8,20 @@ public class LinksContext : DbContext
     public LinksContext(DbContextOptions<LinksContext> options) : base(options) { }
 
     public DbSet<Link> Links { get; set; }
+    public DbSet<Category> Categories { get; set; }
     public DbSet<AdminUser> AdminUsers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Unique constraint on Category.Name
+        modelBuilder.Entity<Category>()
+            .HasIndex(c => c.Name)
+            .IsUnique();
+
+        // Index on Category.Order for sorting
+        modelBuilder.Entity<Category>()
+            .HasIndex(c => c.Order);
+
         // Configure Tags as comma-separated string
         var listComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<string>>(
             (c1, c2) => c1!.SequenceEqual(c2!),
@@ -25,9 +35,16 @@ public class LinksContext : DbContext
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
             .Metadata.SetValueComparer(listComparer);
 
-        // Index on Category for filtering
+        // Link-Category relationship
         modelBuilder.Entity<Link>()
-            .HasIndex(e => e.Category);
+            .HasOne(l => l.Category)
+            .WithMany()
+            .HasForeignKey(l => l.CategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Index on CategoryId for filtering
+        modelBuilder.Entity<Link>()
+            .HasIndex(e => e.CategoryId);
 
         // Index on Order for sorting
         modelBuilder.Entity<Link>()

@@ -8,7 +8,8 @@ public class LinkDto
     public string Title { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string? Category { get; set; }
+    public int? CategoryId { get; set; }
+    public string? CategoryName { get; set; }
     public List<string> Tags { get; set; } = new();
     public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -30,8 +31,7 @@ public class CreateLinkDto
     [MaxLength(1000)]
     public string? Description { get; set; }
 
-    [MaxLength(100)]
-    public string? Category { get; set; }
+    public int? CategoryId { get; set; }
 
     public List<string>? Tags { get; set; }
 
@@ -53,8 +53,7 @@ public class UpdateLinkDto
     [MaxLength(1000)]
     public string? Description { get; set; }
 
-    [MaxLength(100)]
-    public string? Category { get; set; }
+    public int? CategoryId { get; set; }
 
     public List<string>? Tags { get; set; }
 

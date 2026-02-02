@@ -24,15 +24,15 @@ public class LinksController : ControllerBase
     // GET: api/links
     [HttpGet]
     public async Task<ActionResult<IEnumerable<LinkDto>>> GetLinks(
-        [FromQuery] string? category = null,
+        [FromQuery] int? categoryId = null,
         [FromQuery] string? tag = null,
         [FromQuery] string? search = null)
     {
-        var query = _context.Links.AsQueryable();
+        var query = _context.Links.Include(l => l.Category).AsQueryable();
 
-        if (!string.IsNullOrEmpty(category))
+        if (categoryId.HasValue)
         {
-            query = query.Where(l => l.Category == category);
+            query = query.Where(l => l.CategoryId == categoryId);
         }
 
         if (!string.IsNullOrEmpty(tag))
@@ -57,7 +57,8 @@ public class LinksController : ControllerBase
                 Title = l.Title,
                 Url = l.Url,
                 Description = l.Description,
-                Category = l.Category,
+                CategoryId = l.CategoryId,
+                CategoryName = l.Category != null ? l.Category.Name : null,
                 Tags = l.Tags,
                 ImageUrl = l.ImageUrl,
                 CreatedAt = l.CreatedAt,
@@ -73,7 +74,9 @@ public class LinksController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<LinkDto>> GetLink(int id)
     {
-        var link = await _context.Links.FindAsync(id);
+        var link = await _context.Links
+            .Include(l => l.Category)
+            .FirstOrDefaultAsync(l => l.Id == id);
 
         if (link == null)
         {
@@ -86,7 +89,8 @@ public class LinksController : ControllerBase
             Title = link.Title,
             Url = link.Url,
             Description = link.Description,
-            Category = link.Category,
+            CategoryId = link.CategoryId,
+            CategoryName = link.Category?.Name,
             Tags = link.Tags,
             ImageUrl = link.ImageUrl,
             CreatedAt = link.CreatedAt,
@@ -105,7 +109,7 @@ public class LinksController : ControllerBase
             Title = dto.Title,
             Url = dto.Url,
             Description = dto.Description,
-            Category = dto.Category,
+            CategoryId = dto.CategoryId,
             Tags = dto.Tags ?? new List<string>(),
             ImageUrl = dto.ImageUrl,
             Order = dto.Order,
@@ -116,13 +120,17 @@ public class LinksController : ControllerBase
         _context.Links.Add(link);
         await _context.SaveChangesAsync();
 
+        // Load category for response
+        await _context.Entry(link).Reference(l => l.Category).LoadAsync();
+
         return CreatedAtAction(nameof(GetLink), new { id = link.Id }, new LinkDto
         {
             Id = link.Id,
             Title = link.Title,
             Url = link.Url,
             Description = link.Description,
-            Category = link.Category,
+            CategoryId = link.CategoryId,
+            CategoryName = link.Category?.Name,
             Tags = link.Tags,
             ImageUrl = link.ImageUrl,
             CreatedAt = link.CreatedAt,
@@ -155,7 +163,7 @@ public class LinksController : ControllerBase
             Title = dto.Title,
             Url = dto.Url,
             Description = dto.Description,
-            Category = dto.Category,
+            CategoryId = dto.CategoryId,
             Tags = dto.Tags ?? new List<string>(),
             ImageUrl = imageUrl,
             Order = dto.Order,
@@ -166,13 +174,17 @@ public class LinksController : ControllerBase
         _context.Links.Add(link);
         await _context.SaveChangesAsync();
 
+        // Load category for response
+        await _context.Entry(link).Reference(l => l.Category).LoadAsync();
+
         return CreatedAtAction(nameof(GetLink), new { id = link.Id }, new LinkDto
         {
             Id = link.Id,
             Title = link.Title,
             Url = link.Url,
             Description = link.Description,
-            Category = link.Category,
+            CategoryId = link.CategoryId,
+            CategoryName = link.Category?.Name,
             Tags = link.Tags,
             ImageUrl = link.ImageUrl,
             CreatedAt = link.CreatedAt,
@@ -196,7 +208,7 @@ public class LinksController : ControllerBase
         if (dto.Title != null) link.Title = dto.Title;
         if (dto.Url != null) link.Url = dto.Url;
         if (dto.Description != null) link.Description = dto.Description;
-        if (dto.Category != null) link.Category = dto.Category;
+        if (dto.CategoryId.HasValue) link.CategoryId = dto.CategoryId.Value == 0 ? null : dto.CategoryId;
         if (dto.Tags != null) link.Tags = dto.Tags;
         if (dto.ImageUrl != null) link.ImageUrl = dto.ImageUrl;
         if (dto.Order.HasValue) link.Order = dto.Order.Value;
@@ -205,13 +217,17 @@ public class LinksController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        // Load category for response
+        await _context.Entry(link).Reference(l => l.Category).LoadAsync();
+
         return Ok(new LinkDto
         {
             Id = link.Id,
             Title = link.Title,
             Url = link.Url,
             Description = link.Description,
-            Category = link.Category,
+            CategoryId = link.CategoryId,
+            CategoryName = link.Category?.Name,
             Tags = link.Tags,
             ImageUrl = link.ImageUrl,
             CreatedAt = link.CreatedAt,
@@ -253,7 +269,7 @@ public class LinksController : ControllerBase
         if (dto.Title != null) link.Title = dto.Title;
         if (dto.Url != null) link.Url = dto.Url;
         if (dto.Description != null) link.Description = dto.Description;
-        if (dto.Category != null) link.Category = dto.Category;
+        if (dto.CategoryId.HasValue) link.CategoryId = dto.CategoryId.Value == 0 ? null : dto.CategoryId;
         if (dto.Tags != null) link.Tags = dto.Tags;
         if (dto.ImageUrl != null && image == null) link.ImageUrl = dto.ImageUrl;
         if (dto.Order.HasValue) link.Order = dto.Order.Value;
@@ -262,13 +278,17 @@ public class LinksController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        // Load category for response
+        await _context.Entry(link).Reference(l => l.Category).LoadAsync();
+
         return Ok(new LinkDto
         {
             Id = link.Id,
             Title = link.Title,
             Url = link.Url,
             Description = link.Description,
-            Category = link.Category,
+            CategoryId = link.CategoryId,
+            CategoryName = link.Category?.Name,
             Tags = link.Tags,
             ImageUrl = link.ImageUrl,
             CreatedAt = link.CreatedAt,

@@ -18,8 +18,8 @@ public class Link
     [MaxLength(1000)]
     public string? Description { get; set; }
 
-    [MaxLength(100)]
-    public string? Category { get; set; }
+    public int? CategoryId { get; set; }
+    public Category? Category { get; set; }
 
     public List<string> Tags { get; set; } = new();
 
