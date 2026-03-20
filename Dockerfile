@@ -19,6 +19,10 @@ COPY --from=build /app/publish .
 # Install EF Core tools for migrations
 ENV PATH="$PATH:/root/.dotnet/tools"
 
+# Reduce runtime memory on VPS
+ENV DOTNET_gcServer=0
+ENV DOTNET_GCConserveMemory=9
+
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
