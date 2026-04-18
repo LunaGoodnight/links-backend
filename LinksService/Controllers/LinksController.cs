@@ -297,6 +297,60 @@ public class LinksController : ControllerBase
         });
     }
 
+    // PUT: api/links/batch-order
+    [HttpPut("batch-order")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<LinkDto>>> BatchUpdateOrder([FromBody] BatchUpdateLinkOrderDto dto)
+    {
+        if (dto.Items.Count == 0)
+        {
+            return BadRequest(new { error = "No items provided" });
+        }
+
+        var ids = dto.Items.Select(i => i.Id).ToList();
+        var links = await _context.Links
+            .Include(l => l.Category)
+            .Where(l => ids.Contains(l.Id))
+            .ToListAsync();
+
+        if (links.Count != ids.Count)
+        {
+            var foundIds = links.Select(l => l.Id).ToHashSet();
+            var missingIds = ids.Where(id => !foundIds.Contains(id)).ToList();
+            return NotFound(new { error = $"Links not found: {string.Join(", ", missingIds)}" });
+        }
+
+        var orderMap = dto.Items.ToDictionary(i => i.Id, i => i.Order);
+        foreach (var link in links)
+        {
+            link.Order = orderMap[link.Id];
+            link.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        var result = links
+            .OrderBy(l => l.Order)
+            .ThenByDescending(l => l.CreatedAt)
+            .Select(l => new LinkDto
+            {
+                Id = l.Id,
+                Title = l.Title,
+                Url = l.Url,
+                Description = l.Description,
+                CategoryId = l.CategoryId,
+                CategoryName = l.Category?.Name,
+                Tags = l.Tags,
+                ImageUrl = l.ImageUrl,
+                CreatedAt = l.CreatedAt,
+                UpdatedAt = l.UpdatedAt,
+                Order = l.Order
+            })
+            .ToList();
+
+        return Ok(result);
+    }
+
     // DELETE: api/links/5
     [HttpDelete("{id}")]
     [Authorize]

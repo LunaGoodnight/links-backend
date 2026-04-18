@@ -63,6 +63,18 @@ public class UpdateLinkDto
     public int? Order { get; set; }
 }
 
+public class BatchUpdateLinkOrderDto
+{
+    [Required]
+    public List<LinkOrderItem> Items { get; set; } = new();
+}
+
+public class LinkOrderItem
+{
+    public int Id { get; set; }
+    public int Order { get; set; }
+}
+
 public class LoginDto
 {
     [Required]
