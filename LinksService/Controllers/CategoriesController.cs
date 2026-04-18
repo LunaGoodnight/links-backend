@@ -163,6 +163,54 @@ public class CategoriesController : ControllerBase
         return NoContent();
     }
 
+    // PUT: api/categories/batch-order
+    [HttpPut("batch-order")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<CategoryDto>>> BatchUpdateOrder([FromBody] BatchUpdateCategoryOrderDto dto)
+    {
+        if (dto.Items.Count == 0)
+        {
+            return BadRequest(new { error = "No items provided" });
+        }
+
+        var ids = dto.Items.Select(i => i.Id).ToList();
+        var categories = await _context.Categories
+            .Where(c => ids.Contains(c.Id))
+            .ToListAsync();
+
+        if (categories.Count != ids.Count)
+        {
+            var foundIds = categories.Select(c => c.Id).ToHashSet();
+            var missingIds = ids.Where(id => !foundIds.Contains(id)).ToList();
+            return NotFound(new { error = $"Categories not found: {string.Join(", ", missingIds)}" });
+        }
+
+        var orderMap = dto.Items.ToDictionary(i => i.Id, i => i.Order);
+        foreach (var category in categories)
+        {
+            category.Order = orderMap[category.Id];
+            category.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        var result = categories
+            .OrderBy(c => c.Order)
+            .ThenBy(c => c.Name)
+            .Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                Order = c.Order,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt
+            })
+            .ToList();
+
+        return Ok(result);
+    }
+
     // GET: api/categories/tags
     [HttpGet("tags")]
     public async Task<ActionResult<IEnumerable<string>>> GetTags()

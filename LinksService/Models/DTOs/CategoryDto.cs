@@ -34,3 +34,15 @@ public class UpdateCategoryDto
 
     public int? Order { get; set; }
 }
+
+public class BatchUpdateCategoryOrderDto
+{
+    [Required]
+    public List<CategoryOrderItem> Items { get; set; } = new();
+}
+
+public class CategoryOrderItem
+{
+    public int Id { get; set; }
+    public int Order { get; set; }
+}
